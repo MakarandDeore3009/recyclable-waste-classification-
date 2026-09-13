@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SortWise — Login</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            font-family: "Manrope", sans-serif;
+            background: #f4f1e8;
+            color: #1f3025;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 430px;
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .brand-mark {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .brand-name {
+            font-family: "Fraunces", serif;
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .tagline {
+            margin-top: 6px;
+            font-size: 14px;
+            color: #667269;
+        }
+
+        .login-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 34px;
+            box-shadow: 0 15px 45px rgba(31, 48, 37, 0.12);
+        }
+
+        .login-card h1 {
+            font-family: "Fraunces", serif;
+            font-size: 30px;
+            margin-bottom: 8px;
+        }
+
+        .login-card > p {
+            color: #69756d;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 7px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 15px;
+            border: 1px solid #d6ddd7;
+            border-radius: 12px;
+            outline: none;
+            font-family: inherit;
+            font-size: 14px;
+            background: #fafbf9;
+        }
+
+        input:focus {
+            border-color: #477657;
+            box-shadow: 0 0 0 3px rgba(71, 118, 87, 0.1);
+        }
+
+        .login-btn {
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 5px;
+            background: #294b34;
+            color: white;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .login-btn:hover {
+            background: #1e3b27;
+            transform: translateY(-1px);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .signup-link {
+            text-align: center;
+            margin-top: 18px;
+            color: #69756d;
+            font-size: 13px;
+        }
+
+        .signup-link a {
+            color: #294b34;
+            font-weight: 800;
+            text-decoration: none;
+            margin-left: 4px;
+        }
+
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+
+        .error-box {
+            display: none;
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: #fff0ee;
+            color: #a23b2f;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .success-box {
+            display: none;
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: #edf8ef;
+            color: #276238;
+            font-size: 13px;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #7b857e;
+        }
+
+        @media (max-width: 500px) {
+            .login-card {
+                padding: 25px;
+            }
+
+            .brand-name {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="login-container">
+
+    <div class="brand">
+        <span class="brand-mark">🌱</span>
+        <div class="brand-name">SortWise</div>
+        <div class="tagline">know before you throw</div>
+    </div>
+
+    <div class="login-card">
+
+        <h1>Welcome back</h1>
+
+        <p>
+            Login to continue scanning waste, earning eco-points,
+            and tracking your environmental impact.
+        </p>
+
+        <form id="loginForm">
+
+            <div class="form-group">
+                <label for="email">Email</label>
+
+                <input
+                    type="email"
+                    id="email"
+                    placeholder="Enter your email"
+                    required
+                    autocomplete="email"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+
+                <input
+                    type="password"
+                    id="password"
+                    placeholder="Enter your password"
+                    required
+                    autocomplete="current-password"
+                >
+            </div>
+
+            <button
+                type="submit"
+                id="loginBtn"
+                class="login-btn"
+            >
+                Login to SortWise
+            </button>
+
+        </form>
+
+        <div class="signup-link">
+            Don't have an account?
+            <a href="signup.html">Create an account</a>
+        </div>
+
+        <div id="errorBox" class="error-box"></div>
+
+        <div id="successBox" class="success-box"></div>
+
+    </div>
+
+    <div class="footer-text">
+        ♻️ Sort smarter. Recycle better.
+    </div>
+
+</div>
+
+<script>
+const loginForm = document.getElementById("loginForm");
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+const loginBtn = document.getElementById("loginBtn");
+
+const errorBox = document.getElementById("errorBox");
+const successBox = document.getElementById("successBox");
+
+
+/*
+ * If the user is already logged in, don't show the login page again.
+ */
+(function checkExistingLogin() {
+    const token = localStorage.getItem("sortwiseToken");
+    const loggedIn = localStorage.getItem("sortwiseLoggedIn");
+
+    if (token && loggedIn === "true") {
+        window.location.replace("index.html");
+    }
+})();
+
+
+loginForm.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    hideMessages();
+
+    const email = emailInput.value.trim().toLowerCase();
+    const password = passwordInput.value;
+
+    if (!email || !password) {
+        showError("Please enter email and password.");
+        return;
+    }
+
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Logging in...";
+
+    try {
+        const response = await fetch("/api/login", {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        });
+
+        /*
+         * Read as text first.
+         * This prevents the confusing:
+         * Unexpected token '<'
+         * error when Flask accidentally returns HTML.
+         */
+        const text = await response.text();
+
+        let data;
+
+        try {
+            data = JSON.parse(text);
+        } catch (jsonError) {
+            console.error("Non-JSON response from /api/login:");
+            console.error(text);
+
+            showError(
+                "Server returned an invalid response. " +
+                "Make sure you are opening SortWise through Flask at " +
+                "http://127.0.0.1:5000/login.html"
+            );
+
+            return;
+        }
+
+        if (!response.ok) {
+            showError(
+                data.error ||
+                data.message ||
+                "Invalid email or password."
+            );
+
+            return;
+        }
+
+        const token = data.token || data.access_token;
+
+        if (!token) {
+            showError(
+                "Login succeeded, but no authentication token was received."
+            );
+
+            return;
+        }
+
+        /*
+         * Save authentication information.
+         */
+        localStorage.setItem("sortwiseToken", token);
+        localStorage.setItem("sortwiseLoggedIn", "true");
+
+        if (data.user) {
+            localStorage.setItem(
+                "sortwiseUser",
+                JSON.stringify(data.user)
+            );
+
+            if (data.user.username) {
+                localStorage.setItem(
+                    "sortwise_username",
+                    data.user.username
+                );
+            }
+        }
+
+        showSuccess("Login successful. Opening SortWise...");
+
+        /*
+         * Small delay so the success message is visible.
+         */
+        setTimeout(function () {
+            window.location.replace("index.html");
+        }, 300);
+
+    } catch (error) {
+        console.error("Login error:", error);
+
+        showError(
+            "Cannot connect to the SortWise server. " +
+            "Please make sure Flask is running."
+        );
+    } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = "Login to SortWise";
+    }
+});
+
+
+function showError(message) {
+    errorBox.textContent = message;
+    errorBox.style.display = "block";
+}
+
+
+function showSuccess(message) {
+    successBox.textContent = message;
+    successBox.style.display = "block";
+}
+
+
+function hideMessages() {
+    errorBox.textContent = "";
+    errorBox.style.display = "none";
+
+    successBox.textContent = "";
+    successBox.style.display = "none";
+}
+</script>
+
+</body>
+</html>

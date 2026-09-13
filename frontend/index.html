@@ -1,0 +1,2145 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8" />
+
+<meta
+ name="viewport"
+ content="width=device-width, initial-scale=1.0"
+/>
+
+<title>SortWise — know before you throw</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+/>
+
+<link rel="stylesheet" href="style.css" />
+
+<style>
+
+/* =========================================================
+   PROFILE MENU
+   ========================================================= */
+
+.user-pill {
+    position: relative;
+}
+
+.profile-menu {
+    position: relative;
+}
+
+.profile-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 9px 12px;
+    border-radius: 10px;
+}
+
+.profile-button:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.profile-avatar-small {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #315f3a;
+    color: white;
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.profile-arrow {
+    font-size: 10px;
+    margin-left: 2px;
+}
+
+.profile-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    width: 270px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+}
+
+.profile-dropdown.show {
+    display: block;
+}
+
+.profile-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+}
+
+.profile-avatar-large {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #315f3a;
+    color: white;
+    font-size: 19px;
+    font-weight: 800;
+}
+
+.profile-user-name {
+    font-size: 15px;
+    font-weight: 800;
+    color: #222;
+}
+
+.profile-user-email {
+    font-size: 12px;
+    color: #777;
+    margin-top: 3px;
+    word-break: break-word;
+}
+
+.profile-divider {
+    height: 1px;
+    background: #eeeeee;
+    margin: 7px 4px;
+}
+
+.profile-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 11px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    text-decoration: none;
+    color: #333;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.profile-dropdown-item:hover {
+    background: #f5f5f5;
+}
+
+.profile-dropdown-item.logout-item {
+    color: #c0392b;
+}
+
+.profile-dropdown-item.logout-item:hover {
+    background: #fff0ee;
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+
+    .profile-dropdown {
+        right: -5px;
+        width: 250px;
+    }
+
+    .profile-button {
+        padding: 7px;
+    }
+
+    #navUserName {
+        display: none;
+    }
+
+}
+
+
+/* =========================================================
+   PROFILE PAGE MODAL
+   ========================================================= */
+
+.profile-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 10000;
+}
+
+.profile-modal.hidden {
+    display: none;
+}
+
+.profile-modal-card {
+    width: 100%;
+    max-width: 460px;
+    background: white;
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.profile-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+}
+
+.profile-modal-header h3 {
+    margin: 0;
+    font-family: "Fraunces", serif;
+    font-size: 26px;
+}
+
+.profile-close {
+    border: none;
+    background: #f1f1f1;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.profile-details {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.profile-detail-box {
+    background: #f7f8f7;
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.profile-detail-label {
+    font-size: 11px;
+    color: #777;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.profile-detail-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: #222;
+    word-break: break-word;
+}
+
+.profile-modal-actions {
+    margin-top: 22px;
+    display: flex;
+    gap: 10px;
+}
+
+.profile-modal-actions button {
+    flex: 1;
+}
+
+
+/* =========================================================
+   DISPOSAL GUIDE - TEXT WRAPPING FIX
+   ========================================================= */
+
+.ticket {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.ticket-guide-side {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.guide-summary {
+    width: 100%;
+    min-width: 0;
+    margin: 0 0 24px;
+    line-height: 1.6;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: break-word;
+}
+
+.guide-steps {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    box-sizing: border-box;
+}
+
+.guide-steps li {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    box-sizing: border-box;
+}
+
+.guide-steps li > span:first-child {
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #e5f2e7;
+    color: #237044;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.guide-steps li > span:last-child {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    display: block;
+    box-sizing: border-box;
+}
+
+.guide-steps .step-title {
+    display: block !important;
+    width: 100%;
+    margin: 0 0 6px;
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1.35;
+    color: #172d20;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+}
+
+.guide-steps .step-detail {
+    display: block !important;
+    width: 100%;
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.65;
+    color: #64736b;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+}
+
+.guide-avoid {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    margin-top: 24px;
+    word-break: normal;
+    overflow-wrap: break-word;
+}
+
+.guide-avoid p,
+.guide-avoid li {
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: break-word;
+}
+
+/* Make the result ticket use two proper columns on desktop */
+@media (min-width: 801px) {
+    .ticket {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        align-items: stretch;
+        gap: 0;
+    }
+
+    .ticket-stamp-side,
+    .ticket-guide-side {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .ticket-guide-side {
+        padding-left: 28px;
+    }
+}
+
+/* Mobile: one column, full readable width */
+@media (max-width: 800px) {
+    .ticket {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .ticket-divider {
+        width: 100%;
+        height: 1px;
+        margin: 24px 0;
+    }
+
+    .ticket-stamp-side,
+    .ticket-guide-side {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .ticket-guide-side {
+        padding-left: 0;
+    }
+}
+
+@media (max-width: 600px) {
+    .guide-steps li {
+        gap: 12px;
+    }
+
+    .guide-steps li > span:first-child {
+        flex-basis: 32px;
+        width: 32px;
+        min-width: 32px;
+        height: 32px;
+    }
+
+    .guide-steps .step-title {
+        font-size: 16px;
+    }
+
+    .guide-steps .step-detail {
+        font-size: 14px;
+        line-height: 1.6;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- =========================================================
+     AUTHENTICATION CHECK
+     ========================================================= -->
+
+<script>
+
+(function () {
+
+    const token =
+        localStorage.getItem("sortwiseToken");
+
+    const loggedIn =
+        localStorage.getItem("sortwiseLoggedIn");
+
+
+    /*
+     * If there is no login token,
+     * redirect to login page.
+     */
+
+    if (!token || loggedIn !== "true") {
+
+        window.location.replace("login.html");
+
+    }
+
+})();
+
+</script>
+
+<!-- =========================================================
+     VERIFICATION BANNER
+     ========================================================= -->
+
+<div
+    id="verifyBanner"
+    class="verify-banner hidden"
+>
+
+
+⚠️ Class labels are unverified — the backend is guessing
+which prediction index maps to which category.
+Run <code>find_class_order.py</code> and update
+<code>config.py</code> before trusting results.
+
+
+</div>
+
+<!-- =========================================================
+     TOP BAR
+     ========================================================= -->
+
+<header class="topbar">
+
+<div class="brand">
+
+
+<span class="brand-mark">🌱</span>
+
+<span class="brand-name">
+    SortWise
+</span>
+
+
+</div>
+
+<!-- =========================================================
+     USER PROFILE / MENU
+     ========================================================= -->
+
+<div
+    class="user-pill"
+    id="userPill"
+>
+
+
+<div class="profile-menu">
+
+
+    <button
+        id="profileButton"
+        class="profile-button"
+        type="button"
+        onclick="toggleProfileMenu()"
+    >
+
+        <span
+            class="profile-avatar-small"
+            id="profileAvatarSmall"
+        >
+            U
+        </span>
+
+        <span id="navUserName">
+            Profile
+        </span>
+
+        <span class="profile-arrow">
+            ▼
+        </span>
+
+    </button>
+
+
+
+    <!-- =================================================
+         PROFILE DROPDOWN
+         ================================================= -->
+
+    <div
+        class="profile-dropdown"
+        id="profileDropdown"
+    >
+
+
+        <div class="profile-info">
+
+
+            <div
+                class="profile-avatar-large"
+                id="profileAvatarLarge"
+            >
+                U
+            </div>
+
+
+            <div>
+
+                <div
+                    class="profile-user-name"
+                    id="dropdownUserName"
+                >
+                    User
+                </div>
+
+
+                <div
+                    class="profile-user-email"
+                    id="dropdownUserEmail"
+                >
+                    Loading...
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        <div class="profile-divider"></div>
+
+
+        <button
+            class="profile-dropdown-item"
+            type="button"
+            onclick="openProfile()"
+        >
+
+            👤
+
+            <span>
+                My Profile
+            </span>
+
+        </button>
+
+
+        <button
+            class="profile-dropdown-item logout-item"
+            type="button"
+            onclick="logout()"
+        >
+
+            🚪
+
+            <span>
+                Logout
+            </span>
+
+        </button>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- Existing reward information -->
+
+<div
+    class="user-stats hidden"
+    id="userStats"
+>
+
+    <span id="levelTitle">
+        Seedling
+    </span>
+
+    <span class="dot">
+        ·
+    </span>
+
+    <span id="pointsTotal">
+        0
+    </span>
+
+    pts
+
+</div>
+
+
+</div>
+
+</header>
+
+<!-- =========================================================
+     NAVIGATION
+     ========================================================= -->
+
+<nav class="tabs">
+
+<button
+class="tab active"
+data-tab="scan"
+
+>
+
+
+Scan
+
+
+</button>
+
+<button
+class="tab"
+data-tab="leaderboard"
+
+>
+
+
+Leaderboard
+
+
+</button>
+
+<button
+class="tab"
+data-tab="history"
+
+>
+
+
+My history
+
+
+</button>
+
+</nav>
+
+<!-- =========================================================
+     MAIN
+     ========================================================= -->
+
+<main>
+
+<!-- =========================================================
+     SCAN VIEW
+     ========================================================= -->
+
+<section
+    id="view-scan"
+    class="view active"
+>
+
+<div class="hero">
+
+
+<h1>
+    Know what bin it belongs in —
+    <em>before</em> you throw it.
+</h1>
+
+
+<p class="hero-sub">
+
+    Upload a photo. We'll tell you if it's recyclable,
+    general waste, or e-waste, and exactly what to do next.
+
+</p>
+
+
+</div>
+
+<!-- IMAGE DROPZONE -->
+
+<div
+    class="dropzone"
+    id="dropzone"
+>
+
+
+<input
+    type="file"
+    id="fileInput"
+    accept="image/*"
+    capture="environment"
+    hidden
+/>
+
+
+<div id="dropzoneEmpty">
+
+    <div class="dz-icon">
+        📷
+    </div>
+
+
+    <p class="dz-title">
+        Drop a photo here, or tap to choose one
+    </p>
+
+
+    <p class="dz-sub">
+        JPG, PNG or WEBP — up to 8MB
+    </p>
+
+</div>
+
+
+<img
+    id="previewImg"
+    class="hidden"
+    alt="Selected item preview"
+/>
+
+
+</div>
+
+<!-- SCAN ACTIONS -->
+
+<div class="scan-actions">
+
+
+<button
+    id="classifyBtn"
+    class="btn-primary"
+    disabled
+>
+    Classify this item
+</button>
+
+
+<button
+    id="resetBtn"
+    class="btn-ghost hidden"
+>
+    Choose another photo
+</button>
+
+
+</div>
+
+<!-- LOADING -->
+
+<div
+    id="loadingRow"
+    class="loading-row hidden"
+>
+
+
+<div class="spinner"></div>
+
+<span>
+    Reading the image…
+</span>
+
+
+</div>
+
+<!-- ERROR -->
+
+<div
+    id="errorBox"
+    class="error-box hidden"
+></div>
+
+<!-- =====================================================
+     RESULT TICKET
+     ===================================================== -->
+
+<section
+    id="resultTicket"
+    class="ticket hidden"
+>
+
+
+<div class="ticket-stamp-side">
+
+
+    <div
+        class="stamp"
+        id="stamp"
+    >
+
+        <span
+            class="stamp-label"
+            id="stampLabel"
+        >
+            Recyclable
+        </span>
+
+    </div>
+
+
+    <div class="confidence-row">
+
+        <span id="confidenceText">
+            92% confident
+        </span>
+
+    </div>
+
+
+    <div
+        id="lowConfidenceNote"
+        class="low-conf-note hidden"
+    >
+
+        Not fully sure — consider a clearer,
+        closer photo of just this item.
+
+    </div>
+
+
+    <div
+        class="prob-bars"
+        id="probBars"
+    ></div>
+
+
+    <div
+        class="points-earned"
+        id="pointsEarnedBox"
+    >
+
+        <span class="plus">
+
+            +
+
+            <span id="pointsEarnedNum">
+                0
+            </span>
+
+        </span>
+
+
+        <span>
+            eco-points earned
+        </span>
+
+    </div>
+
+
+    <div
+        id="badgeToast"
+        class="badge-toast hidden"
+    ></div>
+
+
+</div>
+
+
+<div
+    class="ticket-divider"
+    aria-hidden="true"
+></div>
+
+
+<div class="ticket-guide-side">
+
+
+    <p
+        class="guide-summary"
+        id="guideSummary"
+    ></p>
+
+
+    <ol
+        class="guide-steps"
+        id="guideSteps"
+    ></ol>
+
+
+    <div
+        class="guide-avoid"
+        id="guideAvoid"
+    ></div>
+
+
+</div>
+
+
+</section>
+
+<!-- =====================================================
+     REWARD / GROWTH
+     ===================================================== -->
+
+<div
+    class="growth-panel"
+    id="growthPanel"
+>
+
+
+<div class="growth-header">
+
+    <span id="growthLevelTitle">
+        Seedling
+    </span>
+
+
+    <span id="growthPointsLabel">
+        0 / 100 pts to next level
+    </span>
+
+</div>
+
+
+<div class="growth-bar">
+
+    <div
+        class="growth-fill"
+        id="growthFill"
+    ></div>
+
+</div>
+
+
+<div
+    class="badges-row"
+    id="badgesRow"
+></div>
+
+
+</div>
+
+</section>
+
+
+
+<!-- =========================================================
+     LEADERBOARD
+     ========================================================= -->
+
+<section
+    id="view-leaderboard"
+    class="view"
+>
+
+<h2 class="view-title">
+    Community leaderboard
+</h2>
+
+<p class="view-sub">
+    Everyone chipping in to sort waste correctly.
+</p>
+
+<ol
+    class="leaderboard-list"
+    id="leaderboardList"
+></ol>
+
+</section>
+
+<!-- =========================================================
+     HISTORY
+     ========================================================= -->
+
+<section
+    id="view-history"
+    class="view"
+>
+
+<h2 class="view-title">
+    Your scan history
+</h2>
+
+<p
+    class="view-sub"
+    id="historySub"
+>
+    Set your name to start tracking scans.
+</p>
+
+<ul
+    class="history-list"
+    id="historyList"
+></ul>
+
+</section>
+
+</main>
+
+
+<!-- =========================================================
+     SORTWISE AI FLOATING CHATBOT
+     ========================================================= -->
+
+<button
+    id="chatbotFloatingBtn"
+    class="chatbot-floating-btn"
+    type="button"
+    aria-label="Open SortWise AI Assistant"
+    title="SortWise AI Assistant"
+>
+    🌱
+</button>
+
+<div
+    id="chatbotWindow"
+    class="chatbot-window hidden"
+    role="dialog"
+    aria-label="SortWise AI Assistant"
+>
+
+    <div class="chatbot-header">
+
+        <div class="chatbot-header-info">
+
+            <div class="chatbot-logo">
+                🌱
+            </div>
+
+            <div class="chatbot-heading">
+
+                <div class="chatbot-title">
+                    SortWise AI
+                </div>
+
+                <div class="chatbot-online">
+                    ● Local AI Assistant
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="chatbot-header-actions">
+
+            <button
+                id="chatClearBtn"
+                class="chatbot-icon-btn"
+                type="button"
+                title="Clear conversation"
+                aria-label="Clear conversation"
+            >
+                ↻
+            </button>
+
+            <button
+                id="chatCloseBtn"
+                class="chatbot-icon-btn"
+                type="button"
+                title="Close chatbot"
+                aria-label="Close chatbot"
+            >
+                ×
+            </button>
+
+        </div>
+
+    </div>
+
+    <div
+        id="chatMessages"
+        class="chat-messages"
+        aria-live="polite"
+    ></div>
+
+    <div
+        id="chatStatus"
+        class="chat-status hidden"
+    >
+        SortWise AI is thinking...
+    </div>
+
+    <form
+        id="chatForm"
+        class="chat-input-area"
+    >
+
+        <input
+            type="text"
+            id="chatInput"
+            placeholder="Ask about waste disposal..."
+            autocomplete="off"
+            maxlength="2000"
+            aria-label="Ask SortWise AI"
+        >
+
+        <button
+            id="chatSendBtn"
+            class="chat-send-btn"
+            type="submit"
+            aria-label="Send message"
+            title="Send message"
+        >
+            ➤
+        </button>
+
+    </form>
+
+</div>
+
+<!-- =========================================================
+     NAME MODAL
+     ========================================================= -->
+
+<div
+    id="nameModal"
+    class="modal hidden"
+>
+
+<div class="modal-card">
+
+
+<h3>
+    What should we call you?
+</h3>
+
+
+<p>
+    Used only to track your points and badges
+    on this device — no password needed.
+</p>
+
+
+<input
+    id="nameInput"
+    type="text"
+    maxlength="40"
+    placeholder="e.g. Aditi"
+/>
+
+
+<div class="modal-actions">
+
+
+    <button
+        id="nameCancelBtn"
+        class="btn-ghost"
+    >
+        Cancel
+    </button>
+
+
+    <button
+        id="nameSaveBtn"
+        class="btn-primary"
+    >
+        Save
+    </button>
+
+
+</div>
+
+
+</div>
+
+</div>
+
+<!-- =========================================================
+     PROFILE MODAL
+     ========================================================= -->
+
+<div
+    id="profileModal"
+    class="profile-modal hidden"
+>
+
+<div class="profile-modal-card">
+
+
+<div class="profile-modal-header">
+
+
+    <h3>
+        My Profile
+    </h3>
+
+
+    <button
+        class="profile-close"
+        type="button"
+        onclick="closeProfile()"
+    >
+        ×
+    </button>
+
+
+</div>
+
+
+<div class="profile-details">
+
+
+    <div class="profile-detail-box">
+
+        <div class="profile-detail-label">
+            Name
+        </div>
+
+        <div
+            class="profile-detail-value"
+            id="profileNameValue"
+        >
+            Loading...
+        </div>
+
+    </div>
+
+
+    <div class="profile-detail-box">
+
+        <div class="profile-detail-label">
+            Email
+        </div>
+
+        <div
+            class="profile-detail-value"
+            id="profileEmailValue"
+        >
+            Loading...
+        </div>
+
+    </div>
+
+
+    <div class="profile-detail-box">
+
+        <div class="profile-detail-label">
+            Username
+        </div>
+
+        <div
+            class="profile-detail-value"
+            id="profileUsernameValue"
+        >
+            Loading...
+        </div>
+
+    </div>
+
+
+    <div class="profile-detail-box">
+
+        <div class="profile-detail-label">
+            Eco Points
+        </div>
+
+        <div
+            class="profile-detail-value"
+            id="profilePointsValue"
+        >
+            0 pts
+        </div>
+
+    </div>
+
+
+</div>
+
+
+<div class="profile-modal-actions">
+
+
+    <button
+        class="btn-ghost"
+        type="button"
+        onclick="closeProfile()"
+    >
+        Close
+    </button>
+
+
+    <button
+        class="btn-primary"
+        type="button"
+        onclick="logout()"
+    >
+        Logout
+    </button>
+
+
+</div>
+
+
+</div>
+
+</div>
+
+
+
+<style>
+/* =========================================================
+   SORTWISE AI FLOATING CHATBOT
+   ========================================================= */
+
+.chatbot-floating-btn {
+    position: fixed;
+    right: 25px;
+    bottom: 25px;
+    width: 62px;
+    height: 62px;
+    border: none;
+    border-radius: 50%;
+    background: var(--moss);
+    color: white;
+    font-size: 27px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.20);
+    z-index: 9998;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chatbot-floating-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+}
+
+.chatbot-floating-btn:active {
+    transform: scale(0.95);
+}
+
+.chatbot-floating-btn.hidden {
+    display: none;
+}
+
+.chatbot-window {
+    position: fixed;
+    right: 25px;
+    bottom: 100px;
+    width: 370px;
+    height: 530px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 18px 55px rgba(0, 0, 0, 0.22);
+    z-index: 9999;
+    animation: sortwiseChatOpen 0.2s ease;
+}
+
+.chatbot-window.hidden {
+    display: none;
+}
+
+@keyframes sortwiseChatOpen {
+    from {
+        opacity: 0;
+        transform: translateY(15px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.chatbot-header {
+    min-height: 68px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--moss);
+    color: white;
+}
+
+.chatbot-header-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.chatbot-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.17);
+    font-size: 21px;
+}
+
+.chatbot-title {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.chatbot-online {
+    margin-top: 3px;
+    font-size: 10px;
+    opacity: 0.85;
+}
+
+.chatbot-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.chatbot-icon-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: white;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chatbot-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.chatbot-icon-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.chat-messages {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+    background: var(--paper);
+}
+
+.chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: var(--line);
+    border-radius: 10px;
+}
+
+.chat-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    max-width: 88%;
+    animation: chatMessageIn 0.15s ease;
+}
+
+@keyframes chatMessageIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.bot-message {
+    align-self: flex-start;
+}
+
+.user-message {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.chat-avatar {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--moss-soft);
+    font-size: 15px;
+}
+
+.chat-bubble {
+    padding: 10px 12px;
+    border-radius: 13px;
+    font-size: 13px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.bot-message .chat-bubble {
+    background: var(--stone-soft);
+    color: var(--ink);
+    border-top-left-radius: 4px;
+}
+
+.user-message .chat-bubble {
+    background: var(--moss);
+    color: white;
+    border-top-right-radius: 4px;
+}
+
+.chat-status {
+    padding: 7px 15px;
+    background: var(--paper);
+    color: var(--ink-soft);
+    font-size: 11px;
+    font-style: italic;
+}
+
+.chat-status.hidden {
+    display: none;
+}
+
+.chat-input-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px;
+    background: var(--paper);
+    border-top: 1px solid var(--line);
+}
+
+#chatInput {
+    flex: 1;
+    min-width: 0;
+    height: 42px;
+    padding: 0 14px;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    outline: none;
+    background: white;
+    color: var(--ink);
+    font-size: 13px;
+}
+
+#chatInput:focus {
+    border-color: var(--moss);
+}
+
+#chatInput:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.chat-send-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border: none;
+    border-radius: 50%;
+    background: var(--moss);
+    color: white;
+    cursor: pointer;
+    font-size: 17px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-send-btn:hover {
+    opacity: 0.9;
+}
+
+.chat-send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+    .chatbot-floating-btn {
+        right: 18px;
+        bottom: 18px;
+        width: 56px;
+        height: 56px;
+        font-size: 24px;
+    }
+
+    .chatbot-window {
+        left: 10px;
+        right: 10px;
+        bottom: 84px;
+        width: auto;
+        height: min(540px, 72vh);
+        border-radius: 16px;
+    }
+
+    .chat-message {
+        max-width: 92%;
+    }
+}
+</style>
+
+<!-- =========================================================
+     SCRIPT
+     ========================================================= -->
+
+<script src="script.js"></script>
+
+<!-- =========================================================
+     PROFILE + LOGOUT FUNCTIONS
+     ========================================================= -->
+
+<script>
+
+
+/* =========================================================
+   USER DATA
+   ========================================================= */
+
+function getStoredUser() {
+
+    try {
+
+        const storedUser =
+            localStorage.getItem("sortwiseUser");
+
+        if (!storedUser) {
+            return null;
+        }
+
+        return JSON.parse(storedUser);
+
+    } catch (error) {
+
+        console.error(
+            "Unable to read stored user:",
+            error
+        );
+
+        return null;
+
+    }
+
+}
+
+
+/* =========================================================
+   LOAD USER INFORMATION
+   ========================================================= */
+
+function loadUserInformation() {
+
+    const user =
+        getStoredUser();
+
+
+    if (!user) {
+
+        setDefaultUser();
+
+        return;
+
+    }
+
+
+    /*
+     * Support common property names.
+     */
+
+    const name =
+        user.name ||
+        user.full_name ||
+        user.fullName ||
+        user.username ||
+        "User";
+
+
+    const email =
+        user.email ||
+        user.email_address ||
+        "";
+
+
+    const username =
+        user.username ||
+        user.user_name ||
+        name;
+
+
+    /*
+     * Update navbar
+     */
+
+    const navUserName =
+        document.getElementById("navUserName");
+
+    if (navUserName) {
+        navUserName.textContent = name;
+    }
+
+
+    /*
+     * Update dropdown
+     */
+
+    const dropdownUserName =
+        document.getElementById("dropdownUserName");
+
+    if (dropdownUserName) {
+        dropdownUserName.textContent = name;
+    }
+
+
+    const dropdownUserEmail =
+        document.getElementById("dropdownUserEmail");
+
+    if (dropdownUserEmail) {
+
+        dropdownUserEmail.textContent =
+            email || "Logged in user";
+
+    }
+
+
+    /*
+     * Update avatars
+     */
+
+    const firstLetter =
+        name.charAt(0).toUpperCase();
+
+
+    const smallAvatar =
+        document.getElementById(
+            "profileAvatarSmall"
+        );
+
+    const largeAvatar =
+        document.getElementById(
+            "profileAvatarLarge"
+        );
+
+
+    if (smallAvatar) {
+        smallAvatar.textContent = firstLetter;
+    }
+
+
+    if (largeAvatar) {
+        largeAvatar.textContent = firstLetter;
+    }
+
+
+    /*
+     * Update profile modal
+     */
+
+    const profileNameValue =
+        document.getElementById(
+            "profileNameValue"
+        );
+
+    const profileEmailValue =
+        document.getElementById(
+            "profileEmailValue"
+        );
+
+    const profileUsernameValue =
+        document.getElementById(
+            "profileUsernameValue"
+        );
+
+
+    if (profileNameValue) {
+        profileNameValue.textContent = name;
+    }
+
+
+    if (profileEmailValue) {
+        profileEmailValue.textContent =
+            email || "Not available";
+    }
+
+
+    if (profileUsernameValue) {
+        profileUsernameValue.textContent =
+            username || "Not available";
+    }
+
+
+    /*
+     * Eco points
+     */
+
+    const points =
+        user.points ||
+        user.eco_points ||
+        user.ecoPoints ||
+        0;
+
+
+    const profilePointsValue =
+        document.getElementById(
+            "profilePointsValue"
+        );
+
+
+    if (profilePointsValue) {
+
+        profilePointsValue.textContent =
+            Number(points) + " pts";
+
+    }
+
+}
+
+
+/* =========================================================
+   DEFAULT USER
+   ========================================================= */
+
+function setDefaultUser() {
+
+    const navUserName =
+        document.getElementById(
+            "navUserName"
+        );
+
+    if (navUserName) {
+        navUserName.textContent = "Profile";
+    }
+
+
+    const dropdownUserName =
+        document.getElementById(
+            "dropdownUserName"
+        );
+
+    if (dropdownUserName) {
+        dropdownUserName.textContent = "User";
+    }
+
+
+    const dropdownUserEmail =
+        document.getElementById(
+            "dropdownUserEmail"
+        );
+
+    if (dropdownUserEmail) {
+        dropdownUserEmail.textContent =
+            "Logged in user";
+    }
+
+}
+
+
+/* =========================================================
+   TOGGLE PROFILE DROPDOWN
+   ========================================================= */
+
+function toggleProfileMenu() {
+
+    const dropdown =
+        document.getElementById(
+            "profileDropdown"
+        );
+
+
+    if (!dropdown) {
+        return;
+    }
+
+
+    dropdown.classList.toggle("show");
+
+}
+
+
+/* =========================================================
+   CLOSE PROFILE DROPDOWN WHEN CLICKING OUTSIDE
+   ========================================================= */
+
+document.addEventListener(
+    "click",
+    function (event) {
+
+        const profileMenu =
+            document.querySelector(
+                ".profile-menu"
+            );
+
+
+        const dropdown =
+            document.getElementById(
+                "profileDropdown"
+            );
+
+
+        if (!profileMenu || !dropdown) {
+            return;
+        }
+
+
+        if (!profileMenu.contains(event.target)) {
+
+            dropdown.classList.remove(
+                "show"
+            );
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   OPEN MY PROFILE
+   ========================================================= */
+
+function openProfile() {
+
+    const dropdown =
+        document.getElementById(
+            "profileDropdown"
+        );
+
+
+    if (dropdown) {
+
+        dropdown.classList.remove(
+            "show"
+        );
+
+    }
+
+
+    const modal =
+        document.getElementById(
+            "profileModal"
+        );
+
+
+    if (modal) {
+
+        modal.classList.remove(
+            "hidden"
+        );
+
+    }
+
+
+    loadUserInformation();
+
+}
+
+
+/* =========================================================
+   CLOSE MY PROFILE
+   ========================================================= */
+
+function closeProfile() {
+
+    const modal =
+        document.getElementById(
+            "profileModal"
+        );
+
+
+    if (modal) {
+
+        modal.classList.add(
+            "hidden"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   CLOSE PROFILE MODAL WHEN CLICKING BACKDROP
+   ========================================================= */
+
+document.addEventListener(
+    "click",
+    function (event) {
+
+        const modal =
+            document.getElementById(
+                "profileModal"
+            );
+
+
+        if (
+            modal &&
+            event.target === modal
+        ) {
+
+            closeProfile();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+function logout() {
+
+    /*
+     * Remove SortWise authentication.
+     */
+
+    localStorage.removeItem(
+        "sortwiseToken"
+    );
+
+
+    localStorage.removeItem(
+        "sortwiseLoggedIn"
+    );
+
+
+    /*
+     * Remove logged-in user information.
+     */
+
+    localStorage.removeItem(
+        "sortwiseUser"
+    );
+
+
+    /*
+     * Clear temporary session data.
+     */
+
+    sessionStorage.clear();
+
+
+    /*
+     * Redirect to login page.
+     */
+
+    window.location.replace(
+        "login.html"
+    );
+
+}
+
+
+/* =========================================================
+   LOAD USER WHEN PAGE OPENS
+   ========================================================= */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        loadUserInformation();
+
+    }
+);
+
+
+</script>
+
+</body>
+
+</html>

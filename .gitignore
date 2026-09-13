@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+venv/
+env/
+.venv/
+
+# Environment - NEVER push secrets
+.env
+
+# ML Models - too large for GitHub (use Git LFS or share separately)
+*.keras
+*.h5
+*.hdf5
+*.pb
+*.tflite
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads (user data)
+backend/static/uploads/*
+backend/uploads/*
+!backend/static/uploads/.gitkeep
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
