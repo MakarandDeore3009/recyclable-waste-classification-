@@ -277,11 +277,7 @@ except Exception as exc:
 # If your model was trained with a different class order,
 # change this list.
 
-CLASS_NAMES = [
-    "recyclable",
-    "non_recyclable",
-    "e_waste",
-]
+CLASS_NAMES = ["ewaste", "non_recyclable", "recyclable"]
 
 CLASS_ORDER_VERIFIED = True
 
