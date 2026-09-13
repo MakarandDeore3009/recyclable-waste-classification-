@@ -277,7 +277,11 @@ except Exception as exc:
 # If your model was trained with a different class order,
 # change this list.
 
-CLASS_NAMES = ["ewaste", "non_recyclable", "recyclable"]
+CLASS_NAMES = [
+    "recyclable",
+    "non_recyclable",
+    "e_waste",
+]
 
 CLASS_ORDER_VERIFIED = True
 
@@ -502,7 +506,7 @@ DISPOSAL_GUIDES = {
 
     "non_recyclable": {
 
-        "label": "General Waste 🗑️",
+        "label": "Non-Recyclable (General Waste 🗑️)",
 
         "summary": (
             "This item is best treated as general waste "
