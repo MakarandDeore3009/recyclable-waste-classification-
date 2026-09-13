@@ -68,7 +68,7 @@
 # MODEL CONFIG
 # ============================================================
 
-CLASS_NAMES =["ewaste", "non_recyclable", "recyclable"]
+CLASS_NAMES =["e_waste", "non_recyclable", "recyclable"]
 
 CLASS_ORDER_VERIFIED = True
 
