@@ -1,4 +1,3 @@
-
 /*
  * ============================================================
  * SORTWISE FRONTEND SCRIPT
@@ -785,7 +784,8 @@ function renderResult(data) {
     prediction,
     disposal_guide,
     reward,
-    class_order_verified
+    class_order_verified,
+    gradcam,
   } = data;
 
   if (!prediction) {
@@ -823,6 +823,25 @@ function renderResult(data) {
 
     stamp.className =
       `stamp ${prediction.category}`;
+  }
+
+  // ── Grad-CAM heatmap overlay ──────────────────────────────
+  const gradcamSection = el("gradcamSection");
+  const gradcamImg     = el("gradcamImg");
+  const gradcamLabel   = el("gradcamLabel");
+
+  if (gradcamSection && gradcamImg) {
+    if (gradcam) {
+      gradcamImg.src = gradcam;
+      gradcamImg.alt = "AI attention heatmap — highlighted regions influenced the prediction";
+      if (gradcamLabel) {
+        gradcamLabel.textContent =
+          "Red/yellow areas = what the AI focused on most";
+      }
+      gradcamSection.classList.remove("hidden");
+    } else {
+      gradcamSection.classList.add("hidden");
+    }
   }
 
   const stampLabel =
