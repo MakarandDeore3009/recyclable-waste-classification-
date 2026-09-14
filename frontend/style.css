@@ -488,3 +488,69 @@ main {
   .ticket-stamp-side { border-bottom: 1px solid var(--line); }
   .hero h1 { font-size: 1.5rem; }
 }
+
+/* ============================================================
+   GRAD-CAM HEATMAP SECTION
+   ============================================================ */
+
+.gradcam-section {
+    margin-top: 20px;
+    background: var(--surface, #f9f9f7);
+    border: 1.5px solid var(--border, #e5e5e0);
+    border-radius: 14px;
+    padding: 18px 20px;
+    transition: all 0.3s ease;
+}
+
+.gradcam-section.hidden {
+    display: none;
+}
+
+.gradcam-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.gradcam-icon {
+    font-size: 1.1rem;
+}
+
+.gradcam-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text, #1a1a18);
+    letter-spacing: 0.01em;
+}
+
+.gradcam-label {
+    font-size: 0.82rem;
+    color: var(--text-muted, #6b7280);
+    margin: 0 0 12px 0;
+}
+
+.gradcam-img-wrap {
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border, #e5e5e0);
+    background: #000;
+    position: relative;
+}
+
+.gradcam-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 10px;
+    object-fit: contain;
+    max-height: 340px;
+}
+
+.gradcam-hint {
+    font-size: 0.78rem;
+    color: var(--text-muted, #6b7280);
+    text-align: center;
+    margin: 10px 0 0 0;
+}
