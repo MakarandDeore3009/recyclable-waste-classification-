@@ -1,4 +1,3 @@
-
 """
 ============================================================
 SORTWISE - WASTE CLASSIFICATION BACKEND
@@ -111,17 +110,21 @@ jwt = JWTManager(app)
 
 
 # ============================================================
-# GROQ LLM CONFIGURATION
+# OLLAMA LOCAL LLM CONFIGURATION
 # ============================================================
 
-# Get a free API key at https://console.groq.com
-# Supported free models: llama3-8b-8192, llama3-70b-8192,
-#                        mixtral-8x7b-32768, gemma2-9b-it
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
-GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+# Ollama runs locally on the same computer.
+# Change OLLAMA_MODEL in the environment if you want to use
+# another installed model, for example qwen2.5:3b.
+OLLAMA_URL = os.getenv(
+    "OLLAMA_URL",
+    "http://127.0.0.1:11434/api/chat",
+)
 
-print(f"[Groq] Model loaded: {GROQ_MODEL}")  # add this line
+OLLAMA_MODEL = os.getenv(
+    "OLLAMA_MODEL",
+    "llama3.2:3b",
+)
 
 
 # ============================================================
@@ -270,17 +273,18 @@ except Exception as exc:
 #
 # The order MUST match your trained model output.
 #
-# 0 -> recyclable
+# Training used alphabetical folder order, so:
+# 0 -> e_waste
 # 1 -> non_recyclable
-# 2 -> e_waste
+# 2 -> recyclable
 #
-# If your model was trained with a different class order,
-# change this list.
+# (Previously this was wrong — recyclable and e_waste were swapped,
+#  causing the model to always appear to predict e_waste.)
 
 CLASS_NAMES = [
-    "recyclable",
-    "non_recyclable",
     "e_waste",
+    "non_recyclable",
+    "recyclable",
 ]
 
 CLASS_ORDER_VERIFIED = True
@@ -506,7 +510,7 @@ DISPOSAL_GUIDES = {
 
     "non_recyclable": {
 
-        "label": "Non-Recyclable (General Waste 🗑️)",
+        "label": "General Waste 🗑️",
 
         "summary": (
             "This item is best treated as general waste "
@@ -1224,9 +1228,9 @@ def health():
             "class_order_verified":
                 CLASS_ORDER_VERIFIED,
 
-            "groq": {
-                "model": GROQ_MODEL,
-                "api_key_set": bool(GROQ_API_KEY),
+            "ollama": {
+                "url": OLLAMA_URL,
+                "model": OLLAMA_MODEL,
             },
         }
     )
@@ -2018,7 +2022,7 @@ def prepare_image(file_storage):
         dtype=np.float32
     )
 
-    array = array / 255.0
+    array = (array / 127.5) - 1.0
 
     array = np.expand_dims(
         array,
@@ -3115,9 +3119,12 @@ def logout():
 
 @app.route("/api/chat", methods=["POST"])
 @jwt_required()
-def chat_with_groq():
+def chat_with_ollama():
     """
-    Send a SortWise waste-management question to Groq's free LLM API.
+    Send a SortWise waste-management question to a local Ollama model.
+
+    The browser sends the current message plus a small amount of recent
+    conversation history. Nothing is sent to a cloud LLM provider.
     """
 
     try:
@@ -3193,76 +3200,71 @@ You are a waste-management assistant, not a general-purpose authority. Politely 
             "content": user_message,
         })
 
-        if not GROQ_API_KEY:
-            return jsonify({
-                "success": False,
-                "error": "GROQ_API_KEY is not set. Add it to your .env file.",
-            }), 503
-
         payload = {
-            "model": GROQ_MODEL,
+            "model": OLLAMA_MODEL,
             "messages": messages,
-            "temperature": 0.3,
-            "max_tokens": 1024,
+            "stream": False,
+            "options": {
+                "temperature": 0.3,
+            },
         }
 
         response = requests.post(
-            GROQ_API_URL,
+            OLLAMA_URL,
             json=payload,
-            headers={
-                "Authorization": f"Bearer {GROQ_API_KEY}",
-                "Content-Type": "application/json",
-            },
-            timeout=30,
+            timeout=120,
         )
 
-        if response.status_code == 401:
-            return jsonify({
-                "success": False,
-                "error": "Invalid GROQ_API_KEY. Check your .env file.",
-            }), 502
-
-        if response.status_code == 429:
-            return jsonify({
-                "success": False,
-                "error": "Groq rate limit reached. Please wait a moment and try again.",
-            }), 429
-
         if response.status_code != 200:
-            print("[Groq] HTTP error:", response.status_code, response.text[:500])
+            print(
+                "[Ollama] HTTP error:",
+                response.status_code,
+                response.text[:1000],
+            )
+
             return jsonify({
                 "success": False,
-                "error": "Groq returned an error. Please try again.",
+                "error": "Ollama returned an error. Make sure the selected model is installed.",
             }), 502
 
         result = response.json()
 
         answer = str(
-            result.get("choices", [{}])[0]
-                  .get("message", {})
-                  .get("content", "")
+            result.get("message", {}).get("content", "")
         ).strip()
 
         if not answer:
             return jsonify({
                 "success": False,
-                "error": "Groq returned an empty response.",
+                "error": "Ollama returned an empty response.",
             }), 502
 
         return jsonify({
             "success": True,
             "response": answer,
-            "model": GROQ_MODEL,
+            "model": OLLAMA_MODEL,
         }), 200
+
+    except requests.exceptions.ConnectionError:
+        return jsonify({
+            "success": False,
+            "error": "Ollama is not running. Start Ollama and try again.",
+        }), 503
 
     except requests.exceptions.Timeout:
         return jsonify({
             "success": False,
-            "error": "Groq took too long to respond. Please try again.",
+            "error": "Ollama took too long to respond. Please try again.",
         }), 504
 
+    except ValueError:
+        return jsonify({
+            "success": False,
+            "error": "Ollama returned an invalid response.",
+        }), 502
+
     except Exception as exc:
-        print("[Groq] Chatbot error:", exc)
+        print("[Ollama] Chatbot error:", exc)
         traceback.print_exc()
 
         return jsonify({
@@ -3397,4 +3399,3 @@ if __name__ == "__main__":
         port=port,
         debug=True,
     )
-
