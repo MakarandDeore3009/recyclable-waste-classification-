@@ -899,6 +899,30 @@ My history
         id="probBars"
     ></div>
 
+    <!-- Grad-CAM Heatmap Section -->
+    <div id="gradcamSection" class="gradcam-section hidden">
+        <div class="gradcam-header">
+            <span class="gradcam-icon">🔍</span>
+            <span class="gradcam-title">AI Feature Attention Map</span>
+        </div>
+        <p id="gradcamLabel" class="gradcam-label">
+            Red/yellow areas = what the AI focused on most
+        </p>
+        <div class="gradcam-img-wrap">
+            <img
+                id="gradcamImg"
+                class="gradcam-img"
+                src=""
+                alt="Grad-CAM heatmap"
+            />
+        </div>
+        <p class="gradcam-hint">
+            🟥 Red = highest attention &nbsp;|&nbsp;
+            🟨 Yellow = medium &nbsp;|&nbsp;
+            🟦 Blue = low attention
+        </p>
+    </div>
+
 
     <div
         class="points-earned"
