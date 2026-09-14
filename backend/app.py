@@ -47,7 +47,10 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 import numpy as np
+import base64
+import io
 from PIL import Image
+import tensorflow as tf
 
 from flask import (
     Flask,
@@ -117,12 +120,10 @@ jwt = JWTManager(app)
 # Supported free models: llama3-8b-8192, llama3-70b-8192,
 #                        mixtral-8x7b-32768, gemma2-9b-it
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama3-8b-8192")
-GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-print(f"[Groq] Model: {GROQ_MODEL}")
-if not GROQ_API_KEY:
-    print("[Groq] WARNING: GROQ_API_KEY is not set. Chat will not work.")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 
 # ============================================================
@@ -271,17 +272,16 @@ except Exception as exc:
 #
 # The order MUST match your trained model output.
 #
-# Training used alphabetical folder order, so:
-# 0 -> e_waste
+# 0 -> recyclable
 # 1 -> non_recyclable
 # 2 -> recyclable
 #
-# (Previously this was wrong — recyclable and e_waste were swapped,
-#  causing the model to always appear to predict e_waste.)
+# If your model was trained with a different class order,
+# change this list.
 
 CLASS_NAMES = [
-    "e_waste",
     "non_recyclable",
+    "organic",
     "recyclable",
 ]
 
@@ -553,9 +553,9 @@ DISPOSAL_GUIDES = {
     },
 
 
-    "e_waste": {
+    "organic": {
 
-        "label": "E-Waste ⚡",
+        "label": "Organic ⚡",
 
         "summary": (
             "Electronic waste should be collected "
@@ -656,7 +656,7 @@ def points_for_category(category):
 
         "non_recyclable": 5,
 
-        "e_waste": 15,
+        "organic": 10,
 
     }.get(category, 5)
 
@@ -851,7 +851,7 @@ def calculate_badges(
             "Recycler"
         )
 
-    if category == "e_waste":
+    if category == "organic":
 
         candidates.add(
             "E-Waste Hero"
@@ -1021,8 +1021,8 @@ def serialize_user(user):
             or 0
         ),
 
-        "e_waste_count": int(
-            user.get("e_waste_count", 0)
+        "organic_count": int(
+            user.get("organic_count", 0)
             or 0
         ),
 
@@ -1368,7 +1368,7 @@ def register():
 
             "non_recyclable_count": 0,
 
-            "e_waste_count": 0,
+            "organic_count": 0,
 
             "streak": 0,
 
@@ -1612,9 +1612,9 @@ def login():
                 "non_recyclable_count"
             ] = 0
 
-        if "e_waste_count" not in user:
+        if "organic_count" not in user:
 
-            updates["e_waste_count"] = 0
+            updates["organic_count"] = 0
 
         if "streak" not in user:
 
@@ -2020,7 +2020,8 @@ def prepare_image(file_storage):
         dtype=np.float32
     )
 
-    array = (array / 127.5) - 1.0
+    # Preprocessing matches training: rescale=1./255
+    array = array / 255.0
 
     array = np.expand_dims(
         array,
@@ -2140,6 +2141,72 @@ def normalize_prediction_output(
 # CLASSIFY IMAGE
 # ============================================================
 
+
+# ============================================================
+# GRAD-CAM — Visual Explanation of Model Predictions
+# ============================================================
+
+def generate_gradcam(pil_image, model, class_index):
+    import tensorflow as tf
+    # Find last Conv2D layer (MobileNetV2 backbone)
+    last_conv_layer = None
+    for layer in reversed(model.layers):
+        if isinstance(layer, tf.keras.layers.Conv2D):
+            last_conv_layer = layer.name
+            break
+    if last_conv_layer is None:
+        return None
+
+    grad_model = tf.keras.models.Model(
+        inputs=model.input,
+        outputs=[model.get_layer(last_conv_layer).output, model.output],
+    )
+
+    img_resized = pil_image.resize((224, 224))
+    img_array = np.asarray(img_resized, dtype=np.float32) / 255.0
+    img_tensor = tf.convert_to_tensor(np.expand_dims(img_array, axis=0))
+
+    with tf.GradientTape() as tape:
+        tape.watch(img_tensor)
+        conv_outputs, predictions = grad_model(img_tensor)
+        loss = predictions[:, class_index]
+
+    grads = tape.gradient(loss, conv_outputs)
+    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+    conv_out = conv_outputs[0].numpy()
+    pg = pooled_grads.numpy()
+
+    for i in range(pg.shape[-1]):
+        conv_out[:, :, i] *= pg[i]
+
+    heatmap = np.mean(conv_out, axis=-1)
+    heatmap = np.maximum(heatmap, 0)
+    if heatmap.max() > 0:
+        heatmap /= heatmap.max()
+
+    orig_w, orig_h = pil_image.size
+    heatmap_uint8 = (heatmap * 255).astype(np.uint8)
+    heatmap_resized = np.array(
+        Image.fromarray(heatmap_uint8).resize((orig_w, orig_h), Image.LANCZOS),
+        dtype=np.float32
+    ) / 255.0
+
+    # Jet colormap: low=blue, mid=green, high=red
+    r = np.clip(1.5 - np.abs(heatmap_resized / 0.5 - 3.0), 0, 1)
+    g = np.clip(1.5 - np.abs(heatmap_resized / 0.5 - 2.0), 0, 1)
+    b = np.clip(1.5 - np.abs(heatmap_resized / 0.5 - 1.0), 0, 1)
+    heatmap_color = np.stack([r, g, b], axis=-1) * 255.0
+
+    orig_array = np.asarray(pil_image, dtype=np.float32)
+    overlay = (0.55 * orig_array + 0.45 * heatmap_color).clip(0, 255).astype(np.uint8)
+    overlay_img = Image.fromarray(overlay)
+
+    buffer = io.BytesIO()
+    overlay_img.save(buffer, format="PNG", optimize=True)
+    buffer.seek(0)
+    b64 = base64.b64encode(buffer.read()).decode("utf-8")
+    return "data:image/png;base64," + b64
+
 def classify_image(file_storage):
 
     model = load_model_once()
@@ -2196,6 +2263,15 @@ def classify_image(file_storage):
         )
     }
 
+    # Generate Grad-CAM heatmap
+    gradcam_image = None
+    try:
+        file_storage.seek(0)
+        pil_img = Image.open(file_storage).convert("RGB")
+        gradcam_image = generate_gradcam(pil_img, model, predicted_index)
+    except Exception as gc_err:
+        print("[GradCAM] Error:", gc_err)
+
     return {
 
         "category":
@@ -2209,6 +2285,9 @@ def classify_image(file_storage):
 
         "all_probabilities":
             all_probabilities,
+
+        "gradcam":
+            gradcam_image,
     }
 
 
@@ -2419,8 +2498,8 @@ def classify():
                 "non_recyclable_count": 1
             },
 
-            "e_waste": {
-                "e_waste_count": 1
+            "organic": {
+                "organic_count": 1
             },
         }
 
@@ -2596,6 +2675,9 @@ def classify():
 
                 "class_order_verified":
                     CLASS_ORDER_VERIFIED,
+
+                "gradcam":
+                    prediction.get("gradcam"),
             }
         ), 200
 
@@ -3112,33 +3194,17 @@ def logout():
 
 
 # ============================================================
-# GROQ AI CHATBOT
+# OLLAMA AI CHATBOT
 # ============================================================
 
 @app.route("/api/chat", methods=["POST"])
 @jwt_required()
 def chat_with_groq():
     """
-    Send a SortWise waste-management question to the Groq cloud API.
-
-    Requires GROQ_API_KEY environment variable to be set.
-    Get a free key at https://console.groq.com
+    Send a SortWise waste-management question to Groq's free LLM API.
     """
 
     try:
-        # --------------------------------------------------------
-        # Guard: API key must be configured
-        # --------------------------------------------------------
-        if not GROQ_API_KEY:
-            return jsonify({
-                "success": False,
-                "error": (
-                    "GROQ_API_KEY is not set. "
-                    "Add it to your .env file or environment variables. "
-                    "Get a free key at https://console.groq.com"
-                ),
-            }), 503
-
         data = request.get_json(silent=True) or {}
 
         user_message = str(data.get("message", "")).strip()
@@ -3156,6 +3222,7 @@ def chat_with_groq():
             }), 400
 
         # Only accept a small, safe conversation window from the frontend.
+        # The latest user message is always supplied separately below.
         raw_history = data.get("history", [])
         history = []
 
@@ -3175,84 +3242,90 @@ def chat_with_groq():
                     "content": content[:2000],
                 })
 
-        system_prompt = (
-            "You are SortWise AI, the assistant inside the SortWise "
-            "waste-classification application.\n\n"
-            "Your purpose is to help users understand waste segregation, "
-            "recycling, e-waste and safe disposal. "
-            "SortWise uses three categories: Recyclable, Non-Recyclable, E-Waste.\n\n"
-            "Rules:\n"
-            "- Use simple, clear language suitable for a college project app.\n"
-            "- Explain an item's likely category and practical disposal steps.\n"
-            "- Local recycling rules vary; do not generalise.\n"
-            "- For batteries, electronics, chemicals, medicines and hazardous "
-            "materials, recommend an authorised collection point.\n"
-            "- Never invent specific recycling centres, phone numbers or services.\n"
-            "- If uncertain, say so.\n"
-            "- Keep answers concise: 3-8 sentences or short bullet points.\n"
-            "- Politely redirect unrelated questions back to waste management."
-        )
+        system_prompt = """
+You are SortWise AI, the local AI assistant inside the SortWise waste-classification application.
+
+Your purpose is to help users understand waste segregation, recycling, e-waste and safe disposal.
+SortWise uses three main categories:
+1. Recyclable
+2. Non-Recyclable
+3. E-Waste
+
+Rules for your answers:
+- Use simple, clear language suitable for a college project application.
+- When asked about an item, explain its likely category and practical disposal steps.
+- Do not pretend that every item has the same recycling rules everywhere. Local municipal rules can differ.
+- For batteries, electronics, chemicals, medicines, bulbs and hazardous materials, recommend an authorised collection/recycling facility or the relevant local waste authority instead of ordinary household disposal when appropriate.
+- Never invent a specific recycling centre, phone number or government service.
+- If you are uncertain, say so and explain what information would help.
+- Keep normal answers concise, usually 3-8 sentences or short bullet points.
+- Do not claim to have physically inspected an item unless an image/classification result was actually provided.
+
+You are a waste-management assistant, not a general-purpose authority. Politely redirect unrelated questions back to SortWise and waste management.
+"""
 
         messages = [
-            {"role": "system", "content": system_prompt},
+            {
+                "role": "system",
+                "content": system_prompt,
+            }
         ]
-        messages.extend(history)
-        messages.append({"role": "user", "content": user_message})
 
-        # --------------------------------------------------------
-        # Call Groq API (OpenAI-compatible endpoint)
-        # --------------------------------------------------------
+        messages.extend(history)
+        messages.append({
+            "role": "user",
+            "content": user_message,
+        })
+
+        if not GROQ_API_KEY:
+            return jsonify({
+                "success": False,
+                "error": "GROQ_API_KEY is not set. Add it to your .env file.",
+            }), 503
+
         payload = {
             "model": GROQ_MODEL,
             "messages": messages,
             "temperature": 0.3,
             "max_tokens": 1024,
-            "stream": False,
-        }
-
-        headers = {
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json",
         }
 
         response = requests.post(
             GROQ_API_URL,
             json=payload,
-            headers=headers,
+            headers={
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json",
+            },
             timeout=30,
         )
 
-        if response.status_code != 200:
-            print(
-                "[Groq] HTTP error:",
-                response.status_code,
-                response.text[:500],
-            )
-            # Surface a helpful message for common errors
-            if response.status_code == 401:
-                error_msg = "Invalid GROQ_API_KEY. Check your key at https://console.groq.com"
-            elif response.status_code == 429:
-                error_msg = "Groq rate limit reached. Please wait a moment and try again."
-            elif response.status_code == 400:
-                error_msg = f"Bad request to Groq: {response.text[:200]}"
-            else:
-                error_msg = f"Groq API error ({response.status_code}). Please try again."
-
+        if response.status_code == 401:
             return jsonify({
                 "success": False,
-                "error": error_msg,
+                "error": "Invalid GROQ_API_KEY. Check your .env file.",
+            }), 502
+
+        if response.status_code == 429:
+            return jsonify({
+                "success": False,
+                "error": "Groq rate limit reached. Please wait a moment and try again.",
+            }), 429
+
+        if response.status_code != 200:
+            print("[Groq] HTTP error:", response.status_code, response.text[:500])
+            return jsonify({
+                "success": False,
+                "error": "Groq returned an error. Please try again.",
             }), 502
 
         result = response.json()
 
-        # Groq uses the OpenAI response shape:
-        # result["choices"][0]["message"]["content"]
-        try:
-            answer = str(
-                result["choices"][0]["message"]["content"]
-            ).strip()
-        except (KeyError, IndexError):
-            answer = ""
+        answer = str(
+            result.get("choices", [{}])[0]
+                  .get("message", {})
+                  .get("content", "")
+        ).strip()
 
         if not answer:
             return jsonify({
@@ -3266,16 +3339,10 @@ def chat_with_groq():
             "model": GROQ_MODEL,
         }), 200
 
-    except requests.exceptions.ConnectionError:
-        return jsonify({
-            "success": False,
-            "error": "Cannot reach Groq API. Check your internet connection.",
-        }), 503
-
     except requests.exceptions.Timeout:
         return jsonify({
             "success": False,
-            "error": "Groq API timed out. Please try again.",
+            "error": "Groq took too long to respond. Please try again.",
         }), 504
 
     except Exception as exc:
@@ -3354,6 +3421,186 @@ def handle_500(error):
 # START SERVER
 # ============================================================
 
+
+# ============================================================
+# MULTI-OBJECT DETECTION API
+# ============================================================
+
+CATEGORY_COLORS = {
+    "recyclable":     "#22c55e",   # green
+    "non_recyclable": "#f97316",   # orange
+    "organic":        "#eab308",   # yellow/brown
+}
+
+def sliding_window_detect(pil_image, stride_ratio=0.25, scales=None, conf_threshold=0.70, max_detections=10):
+    """
+    Run the classifier over a grid of crops at multiple scales.
+    Returns a list of detections: {x, y, w, h, category, confidence, color}
+    """
+    model = load_model_once()
+    if model is None:
+        raise RuntimeError("Model not loaded.")
+
+    orig_w, orig_h = pil_image.size
+    if scales is None:
+        scales = [0.5, 0.35, 0.25]
+
+    detections = []
+
+    for scale in scales:
+        win_w = max(64, int(orig_w * scale))
+        win_h = max(64, int(orig_h * scale))
+        stride_x = max(16, int(win_w * stride_ratio))
+        stride_y = max(16, int(win_h * stride_ratio))
+
+        x = 0
+        while x + win_w <= orig_w:
+            y = 0
+            while y + win_h <= orig_h:
+                crop = pil_image.crop((x, y, x + win_w, y + win_h))
+                crop_resized = crop.resize(IMAGE_SIZE)
+                arr = np.asarray(crop_resized, dtype=np.float32) / 255.0
+                arr = np.expand_dims(arr, axis=0)
+
+                raw = model.predict(arr, verbose=0)
+                probs = normalize_prediction_output(raw)
+                idx = int(np.argmax(probs))
+                conf = float(probs[idx])
+                category = CLASS_NAMES[idx]
+
+                if conf >= conf_threshold:
+                    detections.append({
+                        "x": x,
+                        "y": y,
+                        "w": win_w,
+                        "h": win_h,
+                        "category": category,
+                        "confidence": round(conf, 3),
+                        "color": CATEGORY_COLORS.get(category, "#6b7280"),
+                    })
+                y += stride_y
+            x += stride_x
+
+    # Non-maximum suppression - remove overlapping boxes
+    detections = nms(detections, iou_threshold=0.3)
+
+    # Limit results
+    detections.sort(key=lambda d: d["confidence"], reverse=True)
+    return detections[:max_detections]
+
+
+def iou(a, b):
+    """Intersection over Union for two boxes (x,y,w,h)."""
+    ax1, ay1 = a["x"], a["y"]
+    ax2, ay2 = ax1 + a["w"], ay1 + a["h"]
+    bx1, by1 = b["x"], b["y"]
+    bx2, by2 = bx1 + b["w"], by1 + b["h"]
+
+    inter_x1 = max(ax1, bx1)
+    inter_y1 = max(ay1, by1)
+    inter_x2 = min(ax2, bx2)
+    inter_y2 = min(ay2, by2)
+
+    inter_area = max(0, inter_x2 - inter_x1) * max(0, inter_y2 - inter_y1)
+    a_area = a["w"] * a["h"]
+    b_area = b["w"] * b["h"]
+    union_area = a_area + b_area - inter_area
+
+    return inter_area / union_area if union_area > 0 else 0.0
+
+
+def nms(detections, iou_threshold=0.3):
+    """Greedy non-maximum suppression."""
+    detections = sorted(detections, key=lambda d: d["confidence"], reverse=True)
+    kept = []
+    for det in detections:
+        suppressed = False
+        for k in kept:
+            if iou(det, k) > iou_threshold:
+                suppressed = True
+                break
+        if not suppressed:
+            kept.append(det)
+    return kept
+
+
+@app.route("/api/detect", methods=["POST"])
+@jwt_required()
+def multi_detect():
+    """
+    Multi-object waste detection using sliding window over uploaded image.
+    Returns bounding boxes with category and color for frontend canvas drawing.
+    """
+    try:
+        if "image" not in request.files:
+            return jsonify({"error": "No image uploaded."}), 400
+
+        image_file = request.files["image"]
+        if not image_file or not image_file.filename:
+            return jsonify({"error": "Please select an image."}), 400
+
+        extension = Path(secure_filename(image_file.filename)).suffix.lower()
+        if extension not in ALLOWED_IMAGE_EXTENSIONS:
+            return jsonify({"error": "Unsupported format. Use JPG, PNG, WEBP or BMP."}), 400
+
+        try:
+            pil_image = Image.open(image_file).convert("RGB")
+        except Exception:
+            return jsonify({"error": "Invalid image file."}), 400
+
+        orig_w, orig_h = pil_image.size
+
+        conf_threshold = float(request.form.get("confidence", 0.70))
+        max_det = int(request.form.get("max_detections", 10))
+
+        detections = sliding_window_detect(
+            pil_image,
+            conf_threshold=conf_threshold,
+            max_detections=max_det,
+        )
+
+        # Convert to center-circle format for frontend
+        circles = []
+        for d in detections:
+            cx = d["x"] + d["w"] // 2
+            cy = d["y"] + d["h"] // 2
+            radius = min(d["w"], d["h"]) // 2
+            circles.append({
+                "cx": cx,
+                "cy": cy,
+                "radius": radius,
+                "x": d["x"],
+                "y": d["y"],
+                "w": d["w"],
+                "h": d["h"],
+                "category": d["category"],
+                "confidence": d["confidence"],
+                "color": d["color"],
+            })
+
+        summary = {}
+        for d in detections:
+            summary[d["category"]] = summary.get(d["category"], 0) + 1
+
+        return jsonify({
+            "success": True,
+            "image_width": orig_w,
+            "image_height": orig_h,
+            "detections": circles,
+            "total_detected": len(circles),
+            "summary": summary,
+            "colors": CATEGORY_COLORS,
+        }), 200
+
+    except RuntimeError as e:
+        return jsonify({"error": str(e)}), 503
+
+    except Exception as exc:
+        print("[Detect] Error:", exc)
+        traceback.print_exc()
+        return jsonify({"error": "Detection failed. Please try again."}), 500
+
+
 if __name__ == "__main__":
 
     port = int(
@@ -3413,4 +3660,4 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=port,
         debug=True,
-    )
+        )
