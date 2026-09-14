@@ -110,21 +110,19 @@ jwt = JWTManager(app)
 
 
 # ============================================================
-# OLLAMA LOCAL LLM CONFIGURATION
+# GROQ LLM CONFIGURATION
 # ============================================================
 
-# Ollama runs locally on the same computer.
-# Change OLLAMA_MODEL in the environment if you want to use
-# another installed model, for example qwen2.5:3b.
-OLLAMA_URL = os.getenv(
-    "OLLAMA_URL",
-    "http://127.0.0.1:11434/api/chat",
-)
+# Get a free API key at https://console.groq.com
+# Supported free models: llama3-8b-8192, llama3-70b-8192,
+#                        mixtral-8x7b-32768, gemma2-9b-it
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama3-8b-8192")
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-OLLAMA_MODEL = os.getenv(
-    "OLLAMA_MODEL",
-    "llama3.2:3b",
-)
+print(f"[Groq] Model: {GROQ_MODEL}")
+if not GROQ_API_KEY:
+    print("[Groq] WARNING: GROQ_API_KEY is not set. Chat will not work.")
 
 
 # ============================================================
@@ -1228,9 +1226,9 @@ def health():
             "class_order_verified":
                 CLASS_ORDER_VERIFIED,
 
-            "ollama": {
-                "url": OLLAMA_URL,
-                "model": OLLAMA_MODEL,
+            "groq": {
+                "model": GROQ_MODEL,
+                "api_key_set": bool(GROQ_API_KEY),
             },
         }
     )
@@ -3114,20 +3112,33 @@ def logout():
 
 
 # ============================================================
-# OLLAMA AI CHATBOT
+# GROQ AI CHATBOT
 # ============================================================
 
 @app.route("/api/chat", methods=["POST"])
 @jwt_required()
-def chat_with_ollama():
+def chat_with_groq():
     """
-    Send a SortWise waste-management question to a local Ollama model.
+    Send a SortWise waste-management question to the Groq cloud API.
 
-    The browser sends the current message plus a small amount of recent
-    conversation history. Nothing is sent to a cloud LLM provider.
+    Requires GROQ_API_KEY environment variable to be set.
+    Get a free key at https://console.groq.com
     """
 
     try:
+        # --------------------------------------------------------
+        # Guard: API key must be configured
+        # --------------------------------------------------------
+        if not GROQ_API_KEY:
+            return jsonify({
+                "success": False,
+                "error": (
+                    "GROQ_API_KEY is not set. "
+                    "Add it to your .env file or environment variables. "
+                    "Get a free key at https://console.groq.com"
+                ),
+            }), 503
+
         data = request.get_json(silent=True) or {}
 
         user_message = str(data.get("message", "")).strip()
@@ -3145,7 +3156,6 @@ def chat_with_ollama():
             }), 400
 
         # Only accept a small, safe conversation window from the frontend.
-        # The latest user message is always supplied separately below.
         raw_history = data.get("history", [])
         history = []
 
@@ -3165,106 +3175,111 @@ def chat_with_ollama():
                     "content": content[:2000],
                 })
 
-        system_prompt = """
-You are SortWise AI, the local AI assistant inside the SortWise waste-classification application.
-
-Your purpose is to help users understand waste segregation, recycling, e-waste and safe disposal.
-SortWise uses three main categories:
-1. Recyclable
-2. Non-Recyclable
-3. E-Waste
-
-Rules for your answers:
-- Use simple, clear language suitable for a college project application.
-- When asked about an item, explain its likely category and practical disposal steps.
-- Do not pretend that every item has the same recycling rules everywhere. Local municipal rules can differ.
-- For batteries, electronics, chemicals, medicines, bulbs and hazardous materials, recommend an authorised collection/recycling facility or the relevant local waste authority instead of ordinary household disposal when appropriate.
-- Never invent a specific recycling centre, phone number or government service.
-- If you are uncertain, say so and explain what information would help.
-- Keep normal answers concise, usually 3-8 sentences or short bullet points.
-- Do not claim to have physically inspected an item unless an image/classification result was actually provided.
-
-You are a waste-management assistant, not a general-purpose authority. Politely redirect unrelated questions back to SortWise and waste management.
-"""
+        system_prompt = (
+            "You are SortWise AI, the assistant inside the SortWise "
+            "waste-classification application.\n\n"
+            "Your purpose is to help users understand waste segregation, "
+            "recycling, e-waste and safe disposal. "
+            "SortWise uses three categories: Recyclable, Non-Recyclable, E-Waste.\n\n"
+            "Rules:\n"
+            "- Use simple, clear language suitable for a college project app.\n"
+            "- Explain an item's likely category and practical disposal steps.\n"
+            "- Local recycling rules vary; do not generalise.\n"
+            "- For batteries, electronics, chemicals, medicines and hazardous "
+            "materials, recommend an authorised collection point.\n"
+            "- Never invent specific recycling centres, phone numbers or services.\n"
+            "- If uncertain, say so.\n"
+            "- Keep answers concise: 3-8 sentences or short bullet points.\n"
+            "- Politely redirect unrelated questions back to waste management."
+        )
 
         messages = [
-            {
-                "role": "system",
-                "content": system_prompt,
-            }
+            {"role": "system", "content": system_prompt},
         ]
-
         messages.extend(history)
-        messages.append({
-            "role": "user",
-            "content": user_message,
-        })
+        messages.append({"role": "user", "content": user_message})
 
+        # --------------------------------------------------------
+        # Call Groq API (OpenAI-compatible endpoint)
+        # --------------------------------------------------------
         payload = {
-            "model": OLLAMA_MODEL,
+            "model": GROQ_MODEL,
             "messages": messages,
+            "temperature": 0.3,
+            "max_tokens": 1024,
             "stream": False,
-            "options": {
-                "temperature": 0.3,
-            },
+        }
+
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json",
         }
 
         response = requests.post(
-            OLLAMA_URL,
+            GROQ_API_URL,
             json=payload,
-            timeout=120,
+            headers=headers,
+            timeout=30,
         )
 
         if response.status_code != 200:
             print(
-                "[Ollama] HTTP error:",
+                "[Groq] HTTP error:",
                 response.status_code,
-                response.text[:1000],
+                response.text[:500],
             )
+            # Surface a helpful message for common errors
+            if response.status_code == 401:
+                error_msg = "Invalid GROQ_API_KEY. Check your key at https://console.groq.com"
+            elif response.status_code == 429:
+                error_msg = "Groq rate limit reached. Please wait a moment and try again."
+            elif response.status_code == 400:
+                error_msg = f"Bad request to Groq: {response.text[:200]}"
+            else:
+                error_msg = f"Groq API error ({response.status_code}). Please try again."
 
             return jsonify({
                 "success": False,
-                "error": "Ollama returned an error. Make sure the selected model is installed.",
+                "error": error_msg,
             }), 502
 
         result = response.json()
 
-        answer = str(
-            result.get("message", {}).get("content", "")
-        ).strip()
+        # Groq uses the OpenAI response shape:
+        # result["choices"][0]["message"]["content"]
+        try:
+            answer = str(
+                result["choices"][0]["message"]["content"]
+            ).strip()
+        except (KeyError, IndexError):
+            answer = ""
 
         if not answer:
             return jsonify({
                 "success": False,
-                "error": "Ollama returned an empty response.",
+                "error": "Groq returned an empty response.",
             }), 502
 
         return jsonify({
             "success": True,
             "response": answer,
-            "model": OLLAMA_MODEL,
+            "model": GROQ_MODEL,
         }), 200
 
     except requests.exceptions.ConnectionError:
         return jsonify({
             "success": False,
-            "error": "Ollama is not running. Start Ollama and try again.",
+            "error": "Cannot reach Groq API. Check your internet connection.",
         }), 503
 
     except requests.exceptions.Timeout:
         return jsonify({
             "success": False,
-            "error": "Ollama took too long to respond. Please try again.",
+            "error": "Groq API timed out. Please try again.",
         }), 504
 
-    except ValueError:
-        return jsonify({
-            "success": False,
-            "error": "Ollama returned an invalid response.",
-        }), 502
-
     except Exception as exc:
-        print("[Ollama] Chatbot error:", exc)
+        print("[Groq] Chatbot error:", exc)
         traceback.print_exc()
 
         return jsonify({
