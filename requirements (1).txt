@@ -1,0 +1,14 @@
+flask==3.0.3
+flask-cors==4.0.1
+flask-jwt-extended==4.6.0
+pymongo==4.18.0
+werkzeug==3.1.8
+pillow==10.4.0
+numpy==1.26.4
+tensorflow-cpu==2.16.1
+tf-keras==2.16.0
+python-dotenv==1.2.3
+requests==2.32.3
+gunicorn==21.2.0
+dnspython==2.7.0
+bcrypt==4.2.0
